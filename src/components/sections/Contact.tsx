@@ -22,7 +22,8 @@ export function Contact() {
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
-    const formData = new FormData(e.currentTarget);
+    const formElement = e.currentTarget;
+    const formData = new FormData(formElement);
     formData.append("access_key", process.env.NEXT_PUBLIC_WEB3FORMS_KEY || "");
 
     try {
@@ -42,7 +43,7 @@ export function Contact() {
           budget: '₹10k - ₹25k',
           message: ''
         });
-        e.currentTarget.reset();
+        formElement.reset();
         setTimeout(() => setSubmitStatus('idle'), 5000);
       } else {
         setSubmitStatus('error');
