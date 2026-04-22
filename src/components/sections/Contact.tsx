@@ -14,11 +14,46 @@ export function Contact() {
     budget: '₹10k - ₹25k',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Form submission logic would go here
-    alert("Thanks for your message! I'll be in touch shortly.");
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    const formData = new FormData(e.currentTarget);
+    formData.append("access_key", process.env.NEXT_PUBLIC_WEB3FORMS_KEY || "");
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSubmitStatus('success');
+        setFormState({
+          name: '',
+          email: '',
+          projectType: 'Business Website',
+          budget: '₹10k - ₹25k',
+          message: ''
+        });
+        e.currentTarget.reset();
+        setTimeout(() => setSubmitStatus('idle'), 5000);
+      } else {
+        setSubmitStatus('error');
+        console.error("Form submission error:", data);
+      }
+    } catch (error) {
+      setSubmitStatus('error');
+      console.error("Form submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -82,6 +117,7 @@ export function Contact() {
                   <label className="text-sm font-medium">Name</label>
                   <input 
                     type="text" 
+                    name="name"
                     required
                     value={formState.name}
                     onChange={(e) => setFormState({...formState, name: e.target.value})}
@@ -93,6 +129,7 @@ export function Contact() {
                   <label className="text-sm font-medium">Email</label>
                   <input 
                     type="email" 
+                    name="email"
                     required
                     value={formState.email}
                     onChange={(e) => setFormState({...formState, email: e.target.value})}
@@ -106,6 +143,7 @@ export function Contact() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Project Type</label>
                   <select 
+                    name="projectType"
                     value={formState.projectType}
                     onChange={(e) => setFormState({...formState, projectType: e.target.value})}
                     className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all bg-white"
@@ -119,6 +157,7 @@ export function Contact() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Budget Range</label>
                   <select 
+                    name="budget"
                     value={formState.budget}
                     onChange={(e) => setFormState({...formState, budget: e.target.value})}
                     className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all bg-white"
@@ -134,6 +173,7 @@ export function Contact() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Project Details</label>
                 <textarea 
+                  name="message"
                   required
                   rows={4}
                   value={formState.message}
@@ -143,9 +183,23 @@ export function Contact() {
                 ></textarea>
               </div>
 
-              <Button type="submit" size="lg" className="w-full">
-                Start Your Project
+              {/* Web3Forms spam protection botcheck */}
+              <input type="checkbox" name="botcheck" className="hidden" style={{ display: 'none' }} />
+
+              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'Sending...' : 'Start Your Project'}
               </Button>
+
+              {submitStatus === 'success' && (
+                <p className="text-green-600 text-sm text-center font-medium">
+                  Thanks! Your message has been sent successfully.
+                </p>
+              )}
+              {submitStatus === 'error' && (
+                <p className="text-red-600 text-sm text-center font-medium">
+                  Something went wrong. Please try again later.
+                </p>
+              )}
             </form>
           </motion.div>
 
