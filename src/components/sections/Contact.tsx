@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { Mail, MessageSquare, Phone } from 'lucide-react';
@@ -17,6 +17,82 @@ export function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
+  // Anti-spam & Behavior Tracking state
+  const loadTime = useRef<number>(0);
+  const interactionCount = useRef<number>(0);
+  const visitorId = useRef<string>('unknown');
+  const ipAddress = useRef<string>('');
+  const metadata = useRef<Record<string, any>>({});
+
+  useEffect(() => {
+    loadTime.current = Date.now();
+
+    // 1. Generate Canvas Fingerprint
+    const getCanvasFingerprint = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return '';
+        ctx.textBaseline = "top";
+        ctx.font = "14px 'Arial'";
+        ctx.fillStyle = "#f60";
+        ctx.fillRect(125,1,62,20);
+        ctx.fillStyle = "#069";
+        ctx.fillText("Fingerprint 123 !@#", 2, 15);
+        ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+        ctx.fillText("Fingerprint 123 !@#", 4, 17);
+        return canvas.toDataURL();
+      } catch (e) {
+        return '';
+      }
+    };
+
+    // 2. Hash Function (SHA-256)
+    const hashString = async (msg: string) => {
+      try {
+        const msgBuffer = new TextEncoder().encode(msg);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {
+        return 'hash_failed';
+      }
+    };
+
+    // 3. Collect Metadata
+    const collectData = async () => {
+      const data = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        screenResolution: `${window.screen.width}x${window.screen.height}`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        cookiesEnabled: navigator.cookieEnabled,
+        deviceMemory: (navigator as any).deviceMemory || 'unknown',
+        hardwareConcurrency: navigator.hardwareConcurrency,
+        canvasHash: getCanvasFingerprint()
+      };
+      metadata.current = data;
+      
+      const combined = Object.values(data).join('|');
+      visitorId.current = await hashString(combined);
+      
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        ipAddress.current = ipData.ip;
+      } catch (e) {
+        // Fallback: Web3Forms captures IP automatically if not provided
+      }
+    };
+
+    collectData();
+  }, []);
+
+  const handleInteraction = () => {
+    interactionCount.current += 1;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -24,7 +100,48 @@ export function Contact() {
 
     const formElement = e.currentTarget;
     const formData = new FormData(formElement);
+    
+    // Spam Protection Checks
+    const honeypot = formData.get("company");
+    const timeToSubmit = (Date.now() - loadTime.current) / 1000;
+    
+    // Rate Limiting (1 submission per minute)
+    const lastSubmitTime = localStorage.getItem('last_submit_time');
+    const now = Date.now();
+    if (lastSubmitTime && now - parseInt(lastSubmitTime) < 60000) {
+      console.warn('Rate limited');
+      setSubmitStatus('error');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (honeypot || timeToSubmit < 2 || interactionCount.current === 0) {
+      console.warn('Spam detected, submission blocked');
+      // Silently fail for bots
+      setSubmitStatus('success'); 
+      formElement.reset();
+      setIsSubmitting(false);
+      setTimeout(() => setSubmitStatus('idle'), 5000);
+      return;
+    }
+
+    localStorage.setItem('last_submit_time', now.toString());
+
+    // Append standard payload
     formData.append("access_key", process.env.NEXT_PUBLIC_WEB3FORMS_KEY || "");
+    
+    // Append Advanced Tracking and Metadata
+    formData.append("time_to_submit", timeToSubmit.toString());
+    formData.append("interaction_count", interactionCount.current.toString());
+    formData.append("visitor_id", visitorId.current);
+    if (ipAddress.current) {
+      formData.append("ip_address", ipAddress.current);
+    }
+    
+    // Append individual metadata properties
+    Object.entries(metadata.current).forEach(([key, val]) => {
+      formData.append(`meta_${key}`, String(val));
+    });
 
     try {
       const response = await fetch("https://api.web3forms.com/submit", {
@@ -112,7 +229,10 @@ export function Contact() {
             viewport={{ once: true }}
             className="bg-white p-8 rounded-3xl shadow-xl shadow-primary/5 border border-gray-100 relative z-10"
           >
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} onClick={handleInteraction} onChange={handleInteraction} onKeyDown={handleInteraction} className="space-y-6">
+              {/* Spam Protection Honeypot */}
+              <input type="text" name="company" className="hidden" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+              
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Name</label>
