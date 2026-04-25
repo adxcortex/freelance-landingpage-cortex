@@ -17,13 +17,13 @@ const pricingData = {
 };
 
 export function Calculator() {
-  const [type, setType] = useState<"Landing Page" | "Business Website" | "Web App">("Business Website");
+  const [type, setType] = useState<"Landing Page" | "Business Website" | "Web App / SaaS">("Business Website");
   const [pages, setPages] = useState(1);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [design, setDesign] = useState<"Basic UI" | "Premium UI">("Premium UI");
+  const [design, setDesign] = useState<"Standard" | "Premium Design">("Premium Design");
   const [animations, setAnimations] = useState<"None" | "Moderate" | "Advanced">("Moderate");
-  const [backend, setBackend] = useState<"No Backend" | "Basic Backend" | "Advanced System">("No Backend");
-  const [seo, setSeo] = useState<"Basic SEO" | "Advanced SEO">("Advanced SEO");
+  const [backend, setBackend] = useState<"No Backend" | "Core Backend" | "Advanced System">("No Backend");
+  const [seo, setSeo] = useState<"Basic SEO" | "Technical SEO+">("Basic SEO");
   
   const [minTotal, setMinTotal] = useState(0);
   const [maxTotal, setMaxTotal] = useState(0);
@@ -82,7 +82,7 @@ export function Calculator() {
             viewport={{ once: true }}
             className="text-primary font-semibold tracking-wider uppercase text-sm mb-4 block"
           >
-            Affordable & Scalable
+            Transparent Pricing
           </motion.span>
           <motion.h2 
             initial={{ opacity: 0, y: 10 }}
@@ -107,7 +107,7 @@ export function Calculator() {
             <div>
               <h3 className="text-lg font-bold mb-4">Project Type</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {(["Landing Page", "Business Website", "Web App"] as const).map(t => (
+                {(["Landing Page", "Business Website", "Web App / SaaS"] as const).map(t => (
                   <button
                     key={t}
                     onClick={() => setType(t)}
@@ -170,8 +170,8 @@ export function Calculator() {
                   onChange={(e) => setDesign(e.target.value as any)}
                   className="w-full p-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  <option value="Basic UI">Basic UI</option>
-                  <option value="Premium UI">Premium UI</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Premium Design">Premium Design</option>
                 </select>
               </div>
               
@@ -198,7 +198,7 @@ export function Calculator() {
                   className="w-full p-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                   <option value="No Backend">No Backend</option>
-                  <option value="Basic Backend">Basic Backend</option>
+                  <option value="Core Backend">Core Backend</option>
                   <option value="Advanced System">Advanced System</option>
                 </select>
               </div>
@@ -212,7 +212,7 @@ export function Calculator() {
                   className="w-full p-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                   <option value="Basic SEO">Basic SEO</option>
-                  <option value="Advanced SEO">Advanced SEO</option>
+                  <option value="Technical SEO+">Technical SEO+</option>
                 </select>
               </div>
             </div>
@@ -223,7 +223,7 @@ export function Calculator() {
             <div className="bg-foreground text-white rounded-3xl p-8 sticky top-32 shadow-2xl">
               <h3 className="text-xl font-bold mb-6 text-gray-200">Estimated Range</h3>
               <div className="text-4xl font-black text-white mb-2">
-                ₹{minTotal.toLocaleString('en-IN')} - ₹{maxTotal.toLocaleString('en-IN')}{type === "Web App" ? '+' : ''}
+                ₹{minTotal.toLocaleString('en-IN')} - ₹{maxTotal.toLocaleString('en-IN')}{type === "Web App / SaaS" ? '+' : ''}
               </div>
               <p className="text-gray-400 text-sm mb-8">
                 Final pricing may vary based on exact requirements and scope.

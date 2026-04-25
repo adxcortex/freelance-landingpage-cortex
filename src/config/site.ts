@@ -1,50 +1,55 @@
 export const siteConfig = {
   name: "Adithyan Dileep",
-  role: "Full-Stack Web Developer",
+  role: "Frontend Architect & Technical Partner",
   location: "Kerala, India",
 
   contact: {
     email: "adithyan.n.dileep@gmail.com",
     phone: "+91 9778200669",
-    whatsapp: "919778200669"
+    whatsapp: "919778200669",
   },
 
   links: {
     github: "https://github.com/adithyandileep",
     linkedin: "https://linkedin.com/in/adithyan-dileep/",
-    twitter: "https://twitter.com/"
+    twitter: "https://twitter.com/",
   },
 
   seo: {
-    title: "Adithyan Dileep | Premium Freelance Web Developer",
-    description: "Affordable, high-converting websites and scalable SaaS applications for local startups and global clients. Web developer based in Kerala, India.",
-    url: "https://yourdomain.com",
+    title: "Adithyan Dileep | Next.js Developer & Frontend Architect",
+    description:
+      "Frontend architect specialising in high-performance Next.js applications, B2B SaaS products, and conversion-optimised web systems for funded startups and technical teams.",
+    url: "https://adithyandileep.com",
     keywords: [
-      "freelance web developer Kerala",
-      "web developer Thrissur",
-      "affordable website developer India",
-      "startup website developer",
-      "small business website India",
-      "full stack developer"
-    ]
+      "Next.js developer India",
+      "Frontend architect Kerala",
+      "B2B SaaS developer",
+      "High-performance web applications",
+      "React developer for startups",
+      "Freelance Next.js engineer",
+      "SaaS landing page developer",
+      "Full-stack TypeScript developer",
+      "Web application architect India",
+      "Next.js consultant",
+    ],
   },
 
   pricing: {
     base: {
-      "Landing Page": { min: 4000, max: 8000 },
-      "Business Website": { min: 8000, max: 25000 },
-      "Web App": { min: 25000, max: 80000 }
+      "Landing Page":       { min: 40000,  max: 80000  },
+      "Business Website":   { min: 80000,  max: 250000 },
+      "Web App / SaaS":     { min: 250000, max: 800000 },
     },
-    pages: { base: 800, max: 1500 },
+    pages: { base: 8000, max: 15000 },
     features: {
-      "Authentication": 3000,
-      "Payment Gateway": 5000,
-      "Admin Dashboard": 7000,
-      "API Integration": 3000,
+      "Authentication":     30000,
+      "Payment Gateway":    50000,
+      "Admin Dashboard":    70000,
+      "API Integration":    30000,
     },
-    designLevel: { "Basic UI": 0, "Premium UI": 3000 },
-    animations: { "None": 0, "Moderate": 2000, "Advanced": 5000 },
-    backend: { "No Backend": 0, "Basic Backend": 5000, "Advanced System": 15000 },
-    seo: { "Basic SEO": 0, "Advanced SEO": 4000 }
-  }
+    designLevel:  { "Standard":        0, "Premium Design":  30000  },
+    animations:   { "None":            0, "Moderate":        20000, "Advanced": 50000 },
+    backend:      { "No Backend":      0, "Core Backend":    50000, "Advanced System": 150000 },
+    seo:          { "Basic SEO":       0, "Technical SEO+":  40000 },
+  },
 };

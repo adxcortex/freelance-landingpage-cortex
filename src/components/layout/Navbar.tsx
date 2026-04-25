@@ -6,17 +6,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "../../config/site";
 
-// Anchor links only shown on home page; /work is a full page route
-const HOME_LINKS = [
+const PAGE_LINKS = [
+  { label: "Work",     href: "/work"     },
+  { label: "Services", href: "/services" },
+];
+
+const ANCHOR_LINKS = [
   { label: "Process", href: "#process" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Contact", href: "#contact" },
+  { label: "Pricing",  href: "#pricing"  },
+  { label: "Contact",  href: "#contact"  },
 ];
 
 export function Navbar() {
-  const [scrolled, setScrolled]     = useState(false);
-  const [menuOpen, setMenuOpen]     = useState(false);
-  const [ctaVisible, setCtaVisible] = useState(false);
+  const [scrolled,    setScrolled]    = useState(false);
+  const [menuOpen,    setMenuOpen]    = useState(false);
+  const [ctaVisible,  setCtaVisible]  = useState(false);
   const pathname = usePathname();
   const isHome = pathname === "/";
 
@@ -38,7 +42,6 @@ export function Navbar() {
   const scrollTo = (href: string) => {
     setMenuOpen(false);
     if (!isHome) {
-      // navigate home first then scroll
       window.location.href = `/${href}`;
       return;
     }
@@ -46,13 +49,20 @@ export function Navbar() {
     el?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const navLinkClass = (active: boolean) =>
+    `px-4 py-2 text-sm transition-colors duration-150 rounded-lg ${
+      active
+        ? "text-foreground font-medium bg-white/[0.07]"
+        : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+    }`;
+
   return (
     <>
       <motion.header
         role="banner"
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
           scrolled
             ? "bg-[#09090b]/90 backdrop-blur-xl border-b border-white/[0.06] py-3"
@@ -61,11 +71,7 @@ export function Navbar() {
       >
         <div className="container-padded flex items-center justify-between">
           {/* Logo */}
-          <Link
-            href="/"
-            aria-label="Home"
-            className="flex items-center gap-2.5 group"
-          >
+          <Link href="/" aria-label="Home" className="flex items-center gap-2.5 group">
             <span className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center border border-accent/30 group-hover:bg-accent/25 transition-colors duration-200">
               <span className="text-accent-light font-bold text-sm leading-none font-display">A</span>
             </span>
@@ -78,26 +84,21 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <nav
-            aria-label="Primary navigation"
-            className="hidden md:flex items-center gap-1"
-          >
-            {/* /work - page link with active state */}
-            <Link
-              href="/work"
-              className={`px-4 py-2 text-sm transition-colors duration-150 rounded-md ${
-                pathname.startsWith("/work")
-                  ? "text-foreground font-medium bg-white/[0.06]"
-                  : "text-muted hover:text-foreground hover:bg-white/[0.04]"
-              }`}
-            >
-              Work
-            </Link>
-            {HOME_LINKS.map((link) => (
+          <nav aria-label="Primary navigation" className="hidden md:flex items-center gap-1">
+            {PAGE_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={navLinkClass(pathname.startsWith(link.href))}
+              >
+                {link.label}
+              </Link>
+            ))}
+            {ANCHOR_LINKS.map((link) => (
               <button
                 key={link.href}
                 onClick={() => scrollTo(link.href)}
-                className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors duration-150 rounded-md hover:bg-white/[0.04] cursor-pointer"
+                className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors duration-150 rounded-lg hover:bg-white/[0.04] cursor-pointer"
               >
                 {link.label}
               </button>
@@ -115,7 +116,7 @@ export function Navbar() {
                   exit={{ opacity: 0, scale: 0.92 }}
                   transition={{ duration: 0.2 }}
                   onClick={() => scrollTo("#contact")}
-                  className="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-full transition-colors duration-150 shadow-lg shadow-accent/20"
+                  className="px-5 py-2 text-sm font-semibold text-white bg-accent hover:bg-accent/90 rounded-xl transition-colors duration-150 shadow-lg shadow-accent/20"
                 >
                   Apply for a Build
                 </motion.button>
@@ -154,7 +155,6 @@ export function Navbar() {
       <AnimatePresence>
         {menuOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               key="backdrop"
               initial={{ opacity: 0 }}
@@ -166,7 +166,6 @@ export function Navbar() {
               aria-hidden="true"
             />
 
-            {/* Drawer panel */}
             <motion.nav
               id="mobile-menu"
               key="drawer"
@@ -185,38 +184,43 @@ export function Navbar() {
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-white/[0.06] transition-colors"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-                    <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 </button>
               </div>
 
               <div className="flex flex-col gap-1 flex-1">
-                {/* Work - page link */}
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    href="/work"
-                    onClick={() => setMenuOpen(false)}
-                    className={`block px-3 py-3 text-lg font-medium rounded-lg transition-colors ${
-                      pathname.startsWith("/work")
-                        ? "text-foreground bg-white/[0.06]"
-                        : "text-muted hover:text-foreground hover:bg-white/[0.04]"
-                    }`}
+                {PAGE_LINKS.map((link, i) => (
+                  <motion.div
+                    key={link.href}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.06, duration: 0.3, ease: [0.16, 1, 0.3, 1] as const }}
                   >
-                    Work
-                  </Link>
-                </motion.div>
-                {HOME_LINKS.map((link, i) => (
+                    <Link
+                      href={link.href}
+                      onClick={() => setMenuOpen(false)}
+                      className={`block px-3 py-3 text-lg font-medium rounded-xl transition-colors ${
+                        pathname.startsWith(link.href)
+                          ? "text-foreground bg-white/[0.06]"
+                          : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  </motion.div>
+                ))}
+
+                <div className="h-px bg-white/[0.06] my-2" />
+
+                {ANCHOR_LINKS.map((link, i) => (
                   <motion.button
                     key={link.href}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: (i + 1) * 0.06, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ delay: (i + PAGE_LINKS.length) * 0.06, duration: 0.3, ease: [0.16, 1, 0.3, 1] as const }}
                     onClick={() => scrollTo(link.href)}
-                    className="text-left px-3 py-3 text-lg font-medium text-muted hover:text-foreground hover:bg-white/[0.04] rounded-lg transition-colors cursor-pointer"
+                    className="text-left px-3 py-3 text-lg font-medium text-muted hover:text-foreground hover:bg-white/[0.04] rounded-xl transition-colors cursor-pointer"
                   >
                     {link.label}
                   </motion.button>
@@ -226,7 +230,7 @@ export function Navbar() {
               <motion.button
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25, duration: 0.35 }}
+                transition={{ delay: 0.3, duration: 0.35 }}
                 onClick={() => scrollTo("#contact")}
                 className="w-full py-3.5 text-sm font-semibold text-white bg-accent hover:bg-accent/90 rounded-xl transition-colors shadow-lg shadow-accent/20"
               >

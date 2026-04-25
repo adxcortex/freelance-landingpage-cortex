@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import { siteConfig } from "../../config/site";
 import WorkClient from "./WorkClient";
 
 export const metadata: Metadata = {
-  title: "Work - Selected Projects & Case Studies",
+  title: "Work | Selected Next.js Projects & Case Studies",
   description:
-    "A portfolio of real-world client projects and engineered concept builds - demonstrating full-stack capability, system design, and performance-first development.",
+    "Next.js case studies — SaaS applications, high-converting landing pages, admin dashboards, and experimental builds. Real outcomes, real metrics.",
+  alternates: {
+    canonical: `${siteConfig.seo.url}/work`,
+  },
 };
 
 export default function WorkPage() {

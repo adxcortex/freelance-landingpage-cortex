@@ -5,7 +5,7 @@ import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
 import { siteConfig } from "../config/site";
 
-const inter = Inter({
+const inter = Outfit({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-inter",
@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   keywords: siteConfig.seo.keywords,
   authors: [{ name: siteConfig.name }],
   creator: siteConfig.name,
+  alternates: {
+    canonical: siteConfig.seo.url,
+  },
   openGraph: {
     title: siteConfig.seo.title,
     description: siteConfig.seo.description,
@@ -47,6 +50,51 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": `${siteConfig.seo.url}/#person`,
+      name: siteConfig.name,
+      url: siteConfig.seo.url,
+      jobTitle: siteConfig.role,
+      description: siteConfig.seo.description,
+      sameAs: [
+        siteConfig.links.github,
+        siteConfig.links.linkedin,
+      ],
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Thrissur",
+        addressRegion: "Kerala",
+        addressCountry: "IN",
+      },
+    },
+    {
+      "@type": "ProfessionalService",
+      "@id": `${siteConfig.seo.url}/#service`,
+      name: siteConfig.name,
+      url: siteConfig.seo.url,
+      description:
+        "Frontend architecture, high-performance Next.js applications, and conversion-optimised web systems for B2B SaaS startups.",
+      provider: { "@id": `${siteConfig.seo.url}/#person` },
+      areaServed: "Worldwide",
+      priceRange: "$$$",
+      hasOfferCatalog: {
+        "@type": "OfferCatalog",
+        name: "Web Development Services",
+        itemListElement: [
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "SaaS Application Development" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "Landing Page Engineering" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "Frontend Architecture" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "Admin Dashboard Development" } },
+        ],
+      },
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -55,12 +103,18 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${outfit.variable} scroll-smooth`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="antialiased flex flex-col min-h-screen relative bg-background text-foreground">
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
 
-        {/* Floating WhatsApp - single, unobtrusive */}
+        {/* Floating WhatsApp */}
         <a
           href={`https://wa.me/${siteConfig.contact.whatsapp}?text=${encodeURIComponent(
             "Hi Adithyan, I came across your portfolio and I'd like to discuss a project."
