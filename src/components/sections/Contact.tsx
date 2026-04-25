@@ -1,334 +1,353 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Button } from '../ui/Button';
-import { Mail, MessageSquare, Phone } from 'lucide-react';
-import { siteConfig } from '../../config/site';
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { siteConfig } from "../../config/site";
+
+const BUDGET_OPTIONS = [
+  "₹40k – ₹80k",
+  "₹80k – ₹1.5L",
+  "₹1.5L – ₹3L",
+  "₹3L+",
+];
+
+const PROJECT_TYPES = [
+  "Landing Page",
+  "Business Website",
+  "Web Application / SaaS",
+  "Fractional Partnership",
+  "Other",
+];
+
+type FormState = {
+  name: string;
+  email: string;
+  company: string;    // honeypot - hidden from humans
+  projectType: string;
+  budget: string;
+  bottleneck: string;
+  currentSite: string;
+};
+
+type Status = "idle" | "submitting" | "success" | "error";
 
 export function Contact() {
-  const [formState, setFormState] = useState({
-    name: '',
-    email: '',
-    projectType: 'Business Website',
-    budget: '₹10k - ₹25k',
-    message: ''
+  const [form, setForm] = useState<FormState>({
+    name: "",
+    email: "",
+    company: "",
+    projectType: PROJECT_TYPES[1],
+    budget: BUDGET_OPTIONS[1],
+    bottleneck: "",
+    currentSite: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<Status>("idle");
 
-  // Anti-spam & Behavior Tracking state
-  const loadTime = useRef<number>(0);
-  const interactionCount = useRef<number>(0);
-  const visitorId = useRef<string>('unknown');
-  const ipAddress = useRef<string>('');
-  const metadata = useRef<Record<string, any>>({});
+  const loadedAt    = useRef(Date.now());
+  const interactions = useRef(0);
 
-  useEffect(() => {
-    loadTime.current = Date.now();
+  const touch = () => { interactions.current += 1; };
 
-    // 1. Generate Canvas Fingerprint
-    const getCanvasFingerprint = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return '';
-        ctx.textBaseline = "top";
-        ctx.font = "14px 'Arial'";
-        ctx.fillStyle = "#f60";
-        ctx.fillRect(125,1,62,20);
-        ctx.fillStyle = "#069";
-        ctx.fillText("Fingerprint 123 !@#", 2, 15);
-        ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-        ctx.fillText("Fingerprint 123 !@#", 4, 17);
-        return canvas.toDataURL();
-      } catch (e) {
-        return '';
-      }
-    };
-
-    // 2. Hash Function (SHA-256)
-    const hashString = async (msg: string) => {
-      try {
-        const msgBuffer = new TextEncoder().encode(msg);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      } catch (e) {
-        return 'hash_failed';
-      }
-    };
-
-    // 3. Collect Metadata
-    const collectData = async () => {
-      const data = {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        screenResolution: `${window.screen.width}x${window.screen.height}`,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        cookiesEnabled: navigator.cookieEnabled,
-        deviceMemory: (navigator as any).deviceMemory || 'unknown',
-        hardwareConcurrency: navigator.hardwareConcurrency,
-        canvasHash: getCanvasFingerprint()
-      };
-      metadata.current = data;
-      
-      const combined = Object.values(data).join('|');
-      visitorId.current = await hashString(combined);
-      
-      try {
-        const ipRes = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipRes.json();
-        ipAddress.current = ipData.ip;
-      } catch (e) {
-        // Fallback: Web3Forms captures IP automatically if not provided
-      }
-    };
-
-    collectData();
-  }, []);
-
-  const handleInteraction = () => {
-    interactionCount.current += 1;
-  };
+  const set = (k: keyof FormState) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => setForm((prev) => ({ ...prev, [k]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitStatus('idle');
 
-    const formElement = e.currentTarget;
-    const formData = new FormData(formElement);
-    
-    // Spam Protection Checks
-    const honeypot = formData.get("company");
-    const timeToSubmit = (Date.now() - loadTime.current) / 1000;
-    
-    // Rate Limiting (1 submission per minute)
-    const lastSubmitTime = localStorage.getItem('last_submit_time');
-    const now = Date.now();
-    if (lastSubmitTime && now - parseInt(lastSubmitTime) < 60000) {
-      console.warn('Rate limited');
-      setSubmitStatus('error');
-      setIsSubmitting(false);
+    // Spam guards
+    const elapsed = (Date.now() - loadedAt.current) / 1000;
+    if (form.company || elapsed < 3 || interactions.current < 2) {
+      setStatus("success"); // silent fail for bots
       return;
     }
 
-    if (honeypot || timeToSubmit < 2 || interactionCount.current === 0) {
-      console.warn('Spam detected, submission blocked');
-      // Silently fail for bots
-      setSubmitStatus('success'); 
-      formElement.reset();
-      setIsSubmitting(false);
-      setTimeout(() => setSubmitStatus('idle'), 5000);
+    const lastSubmit = localStorage.getItem("_lsub");
+    if (lastSubmit && Date.now() - Number(lastSubmit) < 60_000) {
+      setStatus("error");
       return;
     }
 
-    localStorage.setItem('last_submit_time', now.toString());
+    setStatus("submitting");
 
-    // Append standard payload
-    formData.append("access_key", process.env.NEXT_PUBLIC_WEB3FORMS_KEY || "");
-    
-    // Append Advanced Tracking and Metadata
-    formData.append("time_to_submit", timeToSubmit.toString());
-    formData.append("interaction_count", interactionCount.current.toString());
-    formData.append("visitor_id", visitorId.current);
-    if (ipAddress.current) {
-      formData.append("ip_address", ipAddress.current);
-    }
-    
-    // Append individual metadata properties
-    Object.entries(metadata.current).forEach(([key, val]) => {
-      formData.append(`meta_${key}`, String(val));
-    });
+    const payload = new FormData();
+    payload.append("access_key", process.env.NEXT_PUBLIC_WEB3FORMS_KEY ?? "");
+    payload.append("subject",  `New enquiry from ${form.name} - ${form.projectType}`);
+    payload.append("name",       form.name);
+    payload.append("email",      form.email);
+    payload.append("project_type", form.projectType);
+    payload.append("budget",     form.budget);
+    payload.append("bottleneck", form.bottleneck);
+    payload.append("current_site", form.currentSite);
+    payload.append("botcheck",   "");
 
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        body: formData
-      });
-
-      const data = await response.json();
-
+      const res  = await fetch("https://api.web3forms.com/submit", { method: "POST", body: payload });
+      const data = await res.json();
       if (data.success) {
-        setSubmitStatus('success');
-        setFormState({
-          name: '',
-          email: '',
-          projectType: 'Business Website',
-          budget: '₹10k - ₹25k',
-          message: ''
-        });
-        formElement.reset();
-        setTimeout(() => setSubmitStatus('idle'), 5000);
+        localStorage.setItem("_lsub", String(Date.now()));
+        setStatus("success");
+        setForm({ name:"", email:"", company:"", projectType: PROJECT_TYPES[1], budget: BUDGET_OPTIONS[1], bottleneck:"", currentSite:"" });
       } else {
-        setSubmitStatus('error');
-        console.error("Form submission error:", data);
+        setStatus("error");
       }
-    } catch (error) {
-      setSubmitStatus('error');
-      console.error("Form submission error:", error);
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      setStatus("error");
     }
   };
 
-  return (
-    <section id="contact" className="py-24 bg-white relative">
-      <div className="container mx-auto px-6 max-w-6xl">
-        <div className="grid lg:grid-cols-2 gap-16">
-          
-          <div>
-            <motion.span 
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-primary font-semibold tracking-wider uppercase text-sm mb-4 block"
-            >
-              Get In Touch
-            </motion.span>
-            <motion.h2 
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="text-3xl md:text-5xl font-bold mb-6 leading-tight"
-            >
-              Let's build something <span className="text-primary">amazing</span> together.
-            </motion.h2>
-            <p className="text-foreground/70 text-lg mb-10 max-w-md">
-              Whether you need a complete rebrand or a complex web application, I'm here to help turn your vision into reality.
-            </p>
+  const inputBase =
+    "w-full bg-elevated border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-dimmed focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 transition-all duration-150";
 
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-500">Email</p>
-                  <p className="font-medium">{siteConfig.contact.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Phone className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-500">Phone</p>
-                  <p className="font-medium">{siteConfig.contact.phone}</p>
-                </div>
-              </div>
-            </div>
+  return (
+    <section
+      id="contact"
+      aria-label="Contact and project application"
+      className="py-24 md:py-32 bg-background relative"
+    >
+      <div
+        aria-hidden
+        className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent"
+      />
+
+      <div className="container-padded">
+        <div className="grid lg:grid-cols-[1fr_540px] gap-16 lg:gap-20 items-start">
+
+          {/* ── LEFT: context ── */}
+          <div className="lg:sticky lg:top-28">
+            <motion.span
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="label-text block mb-4"
+            >
+              Apply for a build
+            </motion.span>
+
+            <motion.h2
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.65, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className="font-display text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-5"
+            >
+              Tell me about
+              <br />
+              <span className="text-gradient">your project.</span>
+            </motion.h2>
+
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.55, delay: 0.16 }}
+              className="text-muted text-[0.95rem] leading-relaxed mb-10"
+            >
+              I review every application personally. If there&apos;s a fit, I&apos;ll
+              reach out within 24 hours to schedule a 20-minute strategy call.
+              <br /><br />
+              No commitment required - just a real conversation about what
+              you&apos;re trying to build.
+            </motion.p>
+
+            {/* Contact links */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.22 }}
+              className="space-y-3"
+            >
+              <a
+                href={`mailto:${siteConfig.contact.email}`}
+                className="flex items-center gap-3 text-sm text-muted hover:text-foreground transition-colors group"
+              >
+                <span className="w-8 h-8 rounded-lg bg-elevated border border-white/[0.07] flex items-center justify-center group-hover:border-white/14 transition-colors">
+                  <svg viewBox="0 0 16 16" className="w-4 h-4 fill-none stroke-current" strokeWidth="1.2">
+                    <rect x="1" y="3" width="14" height="10" rx="2"/>
+                    <path d="M1 5.5l7 4.5 7-4.5"/>
+                  </svg>
+                </span>
+                {siteConfig.contact.email}
+              </a>
+              <a
+                href={`https://wa.me/${siteConfig.contact.whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-sm text-muted hover:text-foreground transition-colors group"
+              >
+                <span className="w-8 h-8 rounded-lg bg-elevated border border-white/[0.07] flex items-center justify-center group-hover:border-white/14 transition-colors">
+                  <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 fill-current text-[#25D366]">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 1.41.37 2.74 1.01 3.89L0 16l4.24-1.1A7.96 7.96 0 008 16c4.42 0 8-3.58 8-8S12.42 0 8 0zm4.15 11.3c-.18.5-1.03.94-1.43.98-.37.04-.85.05-1.36-.09-.31-.09-.72-.21-1.22-.43-2.13-.92-3.52-3.05-3.62-3.19-.1-.14-.82-1.09-.82-2.08 0-.99.52-1.48.7-1.68.18-.2.4-.25.53-.25h.38c.12 0 .28-.05.44.34.17.41.57 1.4.62 1.5.05.1.08.22.02.35-.06.13-.1.21-.19.32-.1.11-.2.25-.29.34-.1.1-.19.2-.08.39.11.19.49.81 1.06 1.31.73.65 1.34.85 1.53.94.19.09.3.08.41-.05.11-.13.48-.56.61-.75.13-.19.26-.16.44-.1.18.07 1.16.55 1.36.65.2.1.33.15.38.23.05.08.05.48-.13.98z"/>
+                  </svg>
+                </span>
+                WhatsApp - quick chat
+              </a>
+            </motion.div>
           </div>
 
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+          {/* ── RIGHT: form ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-white p-8 rounded-3xl shadow-xl shadow-primary/5 border border-gray-100 relative z-10"
+            transition={{ duration: 0.7, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
           >
-            <form onSubmit={handleSubmit} onClick={handleInteraction} onChange={handleInteraction} onKeyDown={handleInteraction} className="space-y-6">
-              {/* Spam Protection Honeypot */}
-              <input type="text" name="company" className="hidden" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
-              
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Name</label>
-                  <input 
-                    type="text" 
-                    name="name"
-                    required
-                    value={formState.name}
-                    onChange={(e) => setFormState({...formState, name: e.target.value})}
-                    className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    placeholder="John Doe"
+            {status === "success" ? (
+              <div className="glass-card p-10 text-center flex flex-col items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+                  <svg viewBox="0 0 20 20" className="w-5 h-5 text-emerald-400 fill-none stroke-current" strokeWidth="1.8">
+                    <path d="M4 10l4 4 8-8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <h3 className="font-display text-xl font-semibold text-foreground">Application received.</h3>
+                <p className="text-muted text-sm max-w-xs">
+                  I&apos;ll review your project and reach out within 24 hours.
+                  Keep an eye on your inbox.
+                </p>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmit}
+                onClick={touch}
+                onChange={touch}
+                onKeyDown={touch}
+                className="glass-card p-7 md:p-8 space-y-5"
+                noValidate
+              >
+                {/* Honeypot - invisible to humans */}
+                <input
+                  type="text"
+                  name="company"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={form.company}
+                  onChange={set("company")}
+                  className="hidden"
+                  aria-hidden="true"
+                />
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="cf-name" className="text-xs font-medium text-muted">
+                      Your name <span className="text-accent">*</span>
+                    </label>
+                    <input
+                      id="cf-name"
+                      type="text"
+                      required
+                      autoComplete="name"
+                      placeholder="Alex Johnson"
+                      value={form.name}
+                      onChange={set("name")}
+                      className={inputBase}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="cf-email" className="text-xs font-medium text-muted">
+                      Work email <span className="text-accent">*</span>
+                    </label>
+                    <input
+                      id="cf-email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      placeholder="alex@company.com"
+                      value={form.email}
+                      onChange={set("email")}
+                      className={inputBase}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="cf-type" className="text-xs font-medium text-muted">
+                      Project type <span className="text-accent">*</span>
+                    </label>
+                    <select
+                      id="cf-type"
+                      value={form.projectType}
+                      onChange={set("projectType")}
+                      className={inputBase}
+                    >
+                      {PROJECT_TYPES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="cf-budget" className="text-xs font-medium text-muted">
+                      Budget range <span className="text-accent">*</span>
+                    </label>
+                    <select
+                      id="cf-budget"
+                      value={form.budget}
+                      onChange={set("budget")}
+                      className={inputBase}
+                    >
+                      {BUDGET_OPTIONS.map((b) => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="cf-site" className="text-xs font-medium text-muted">
+                    Current website (if any)
+                  </label>
+                  <input
+                    id="cf-site"
+                    type="url"
+                    autoComplete="url"
+                    placeholder="https://yoursite.com"
+                    value={form.currentSite}
+                    onChange={set("currentSite")}
+                    className={inputBase}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Email</label>
-                  <input 
-                    type="email" 
-                    name="email"
+
+                <div className="space-y-1.5">
+                  <label htmlFor="cf-bottleneck" className="text-xs font-medium text-muted">
+                    What&apos;s your biggest bottleneck right now?{" "}
+                    <span className="text-accent">*</span>
+                  </label>
+                  <textarea
+                    id="cf-bottleneck"
                     required
-                    value={formState.email}
-                    onChange={(e) => setFormState({...formState, email: e.target.value})}
-                    className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    placeholder="john@example.com"
+                    rows={4}
+                    placeholder="e.g. Poor conversion rates, outdated design, no CMS, slow load times…"
+                    value={form.bottleneck}
+                    onChange={set("bottleneck")}
+                    className={`${inputBase} resize-none`}
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Project Type</label>
-                  <select 
-                    name="projectType"
-                    value={formState.projectType}
-                    onChange={(e) => setFormState({...formState, projectType: e.target.value})}
-                    className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all bg-white"
-                  >
-                    <option>Landing Page</option>
-                    <option>Business Website</option>
-                    <option>Web App</option>
-                    <option>Other</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Budget Range</label>
-                  <select 
-                    name="budget"
-                    value={formState.budget}
-                    onChange={(e) => setFormState({...formState, budget: e.target.value})}
-                    className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all bg-white"
-                  >
-                    <option>&lt; ₹10,000</option>
-                    <option>₹10k - ₹25k</option>
-                    <option>₹25k - ₹50k</option>
-                    <option>&gt; ₹50k</option>
-                  </select>
-                </div>
-              </div>
+                {status === "error" && (
+                  <p className="text-xs text-red-400 text-center">
+                    Something went wrong. Please try again or email me directly.
+                  </p>
+                )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Project Details</label>
-                <textarea 
-                  name="message"
-                  required
-                  rows={4}
-                  value={formState.message}
-                  onChange={(e) => setFormState({...formState, message: e.target.value})}
-                  className="w-full p-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none"
-                  placeholder="Tell me about your project goals, timeline, etc."
-                ></textarea>
-              </div>
+                <button
+                  type="submit"
+                  disabled={status === "submitting"}
+                  className="w-full py-3.5 text-sm font-semibold text-white bg-accent hover:bg-accent/90 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed rounded-xl transition-all duration-150 shadow-lg shadow-accent/20"
+                >
+                  {status === "submitting" ? "Sending…" : "Submit Application"}
+                </button>
 
-              {/* Web3Forms spam protection botcheck */}
-              <input type="checkbox" name="botcheck" className="hidden" style={{ display: 'none' }} />
-
-              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Sending...' : 'Start Your Project'}
-              </Button>
-
-              {submitStatus === 'success' && (
-                <p className="text-green-600 text-sm text-center font-medium">
-                  Thanks! Your message has been sent successfully.
+                <p className="text-xs text-dimmed text-center">
+                  Minimum engagement: ₹40,000 · Response within 24 hrs
                 </p>
-              )}
-              {submitStatus === 'error' && (
-                <p className="text-red-600 text-sm text-center font-medium">
-                  Something went wrong. Please try again later.
-                </p>
-              )}
-            </form>
+              </form>
+            )}
           </motion.div>
 
         </div>
       </div>
-      
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-1/3 h-full bg-secondary/30 rounded-l-3xl -z-0" />
     </section>
   );
 }

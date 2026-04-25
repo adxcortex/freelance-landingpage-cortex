@@ -1,119 +1,241 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Code2 } from 'lucide-react';
-import Link from 'next/link';
-import { siteConfig } from '../../config/site';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { siteConfig } from "../../config/site";
+
+// Anchor links only shown on home page; /work is a full page route
+const HOME_LINKS = [
+  { label: "Process", href: "#process" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "Contact", href: "#contact" },
+];
 
 export function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled]     = useState(false);
+  const [menuOpen, setMenuOpen]     = useState(false);
+  const [ctaVisible, setCtaVisible] = useState(false);
+  const pathname = usePathname();
+  const isHome = pathname === "/";
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 24);
+      setCtaVisible(y > 360);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const navLinks = [
-    { name: 'Services', href: '#services' },
-    { name: 'Process', href: '#process' },
-    { name: 'Work', href: '#work' },
-    { name: 'Calculator', href: '#calculator' },
-  ];
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menuOpen]);
+
+  const scrollTo = (href: string) => {
+    setMenuOpen(false);
+    if (!isHome) {
+      // navigate home first then scroll
+      window.location.href = `/${href}`;
+      return;
+    }
+    const el = document.querySelector(href);
+    el?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
-    <motion.header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'glass py-4 shadow-sm' : 'bg-transparent py-6'
-      }`}
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="container mx-auto px-6 max-w-6xl flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-primary/10 p-2 rounded-xl group-hover:bg-primary/20 transition-colors">
-            <Code2 className="w-6 h-6 text-primary" />
-          </div>
-          <span className="font-bold text-xl tracking-tight text-foreground">
-            {siteConfig.name.split(' ')[0]}<span className="text-primary">{siteConfig.name.split(' ').slice(1).join(' ')}</span>
-          </span>
-        </Link>
-
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors"
-            >
-              {link.name}
-            </Link>
-          ))}
+    <>
+      <motion.header
+        role="banner"
+        initial={{ y: -80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-[#09090b]/90 backdrop-blur-xl border-b border-white/[0.06] py-3"
+            : "bg-transparent py-5"
+        }`}
+      >
+        <div className="container-padded flex items-center justify-between">
+          {/* Logo */}
           <Link
-            href="#contact"
-            className="bg-primary text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-primary-dark transition-all shadow-md shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5"
+            href="/"
+            aria-label="Home"
+            className="flex items-center gap-2.5 group"
           >
-            Start Project
+            <span className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center border border-accent/30 group-hover:bg-accent/25 transition-colors duration-200">
+              <span className="text-accent-light font-bold text-sm leading-none font-display">A</span>
+            </span>
+            <span className="font-semibold text-sm text-foreground tracking-tight">
+              {siteConfig.name.split(" ")[0]}
+              <span className="text-muted font-normal">
+                {" "}{siteConfig.name.split(" ").slice(1).join(" ")}
+              </span>
+            </span>
           </Link>
-        </nav>
 
-        {/* Mobile Menu Toggle */}
-        <button
-          className="md:hidden p-2 text-foreground"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? <X /> : <Menu />}
-        </button>
-      </div>
-
-      {/* Mobile Nav */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.nav
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-background border-t mt-4 overflow-hidden shadow-lg rounded-b-2xl absolute w-full left-0"
+          {/* Desktop nav */}
+          <nav
+            aria-label="Primary navigation"
+            className="hidden md:flex items-center gap-1"
           >
-            <div className="flex flex-col py-4 px-6 gap-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="text-lg font-medium text-foreground/80 hover:text-primary"
-                  onClick={() => setIsMobileMenuOpen(false)}
+            {/* /work - page link with active state */}
+            <Link
+              href="/work"
+              className={`px-4 py-2 text-sm transition-colors duration-150 rounded-md ${
+                pathname.startsWith("/work")
+                  ? "text-foreground font-medium bg-white/[0.06]"
+                  : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+              }`}
+            >
+              Work
+            </Link>
+            {HOME_LINKS.map((link) => (
+              <button
+                key={link.href}
+                onClick={() => scrollTo(link.href)}
+                className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors duration-150 rounded-md hover:bg-white/[0.04] cursor-pointer"
+              >
+                {link.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Desktop CTA */}
+          <div className="hidden md:flex items-center gap-3">
+            <AnimatePresence>
+              {ctaVisible && (
+                <motion.button
+                  key="sticky-cta"
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => scrollTo("#contact")}
+                  className="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-full transition-colors duration-150 shadow-lg shadow-accent/20"
                 >
-                  {link.name}
-                </Link>
-              ))}
-              <div className="flex flex-col gap-3 mt-4">
-                <Link
-                  href="#calculator"
-                  className="bg-primary text-white text-center px-6 py-3 rounded-xl font-medium w-full shadow-md shadow-primary/20"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  Apply for a Build
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Mobile hamburger */}
+          <button
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden w-9 h-9 flex flex-col items-center justify-center gap-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
+          >
+            <motion.span
+              animate={menuOpen ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="block w-5 h-px bg-foreground origin-center"
+            />
+            <motion.span
+              animate={menuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
+              transition={{ duration: 0.2 }}
+              className="block w-5 h-px bg-foreground"
+            />
+            <motion.span
+              animate={menuOpen ? { rotate: -45, y: -7 } : { rotate: 0, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="block w-5 h-px bg-foreground origin-center"
+            />
+          </button>
+        </div>
+      </motion.header>
+
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMenuOpen(false)}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+              aria-hidden="true"
+            />
+
+            {/* Drawer panel */}
+            <motion.nav
+              id="mobile-menu"
+              key="drawer"
+              role="dialog"
+              aria-label="Mobile menu"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed top-0 right-0 bottom-0 z-50 w-72 bg-[#111113] border-l border-white/[0.07] flex flex-col p-6 md:hidden"
+            >
+              <div className="flex justify-end mb-10">
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  aria-label="Close menu"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-white/[0.06] transition-colors"
                 >
-                  Get Quote
-                </Link>
-                <a
-                  href={`https://wa.me/${siteConfig.contact.whatsapp}?text=${encodeURIComponent("Hi, I checked your website and I'd like to discuss a project with you.")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-[#25D366] text-white text-center px-6 py-3 rounded-xl font-medium w-full shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  WhatsApp
-                </a>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                    <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </button>
               </div>
-            </div>
-          </motion.nav>
+
+              <div className="flex flex-col gap-1 flex-1">
+                {/* Work - page link */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <Link
+                    href="/work"
+                    onClick={() => setMenuOpen(false)}
+                    className={`block px-3 py-3 text-lg font-medium rounded-lg transition-colors ${
+                      pathname.startsWith("/work")
+                        ? "text-foreground bg-white/[0.06]"
+                        : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+                    }`}
+                  >
+                    Work
+                  </Link>
+                </motion.div>
+                {HOME_LINKS.map((link, i) => (
+                  <motion.button
+                    key={link.href}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: (i + 1) * 0.06, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    onClick={() => scrollTo(link.href)}
+                    className="text-left px-3 py-3 text-lg font-medium text-muted hover:text-foreground hover:bg-white/[0.04] rounded-lg transition-colors cursor-pointer"
+                  >
+                    {link.label}
+                  </motion.button>
+                ))}
+              </div>
+
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.35 }}
+                onClick={() => scrollTo("#contact")}
+                className="w-full py-3.5 text-sm font-semibold text-white bg-accent hover:bg-accent/90 rounded-xl transition-colors shadow-lg shadow-accent/20"
+              >
+                Apply for a Build
+              </motion.button>
+            </motion.nav>
+          </>
         )}
       </AnimatePresence>
-    </motion.header>
+    </>
   );
 }

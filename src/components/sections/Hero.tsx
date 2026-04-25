@@ -1,117 +1,177 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, TrendingUp, Users } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { siteConfig } from '../../config/site';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { siteConfig } from "../../config/site";
+
+const STATS = [
+  { value: "3+",    label: "Products shipped" },
+  { value: "100",   label: "Lighthouse score" },
+  { value: "< 2s",  label: "Avg load time" },
+];
+
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] },
+});
 
 export function Hero() {
+  const scrollToContact = () =>
+    document.querySelector("#contact")?.scrollIntoView({ behavior: "smooth" });
+
+  const scrollToWork = () =>
+    document.querySelector("#work")?.scrollIntoView({ behavior: "smooth" });
+
   return (
-    <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] opacity-20 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/40 to-transparent blur-3xl rounded-full mix-blend-multiply" />
+    <section
+      aria-label="Hero"
+      className="relative min-h-screen flex items-center bg-grid overflow-hidden"
+    >
+      {/* Radial glow behind headline */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 flex items-start justify-center pt-24"
+      >
+        <div className="w-[600px] h-[500px] rounded-full bg-accent/10 blur-[120px]" />
       </div>
 
-      <div className="container mx-auto px-6 max-w-6xl relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-2xl"
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary font-medium text-sm mb-6 border border-primary/20">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-              </span>
-              Limited slots available this month
-            </div>
-            
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6">
-              I build <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-light">websites that convert visitors into revenue</span> - not just clicks
-            </h1>
-            
-            <p className="text-lg md:text-xl text-foreground/70 mb-8 max-w-xl leading-relaxed">
-              Helping local businesses and startups grow with fast, modern, high-converting websites and web apps.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <Button size="lg" className="group shadow-xl shadow-primary/20" onClick={() => document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' })}>
-                Get My Price Estimate
-                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <a href={`https://wa.me/${siteConfig.contact.whatsapp}?text=${encodeURIComponent("Hi, I'd like to discuss a project with you.")}`} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto border-[#25D366] text-[#25D366] hover:bg-[#25D366]/5">
-                  Chat on WhatsApp
-                </Button>
-              </a>
-            </div>
-            
-            <p className="text-sm text-foreground/60 font-medium">
-              Used by startups & local businesses • Fast delivery • Conversion-focused
-            </p>
-          </motion.div>
+      <div className="container-padded relative z-10 pt-32 pb-24 md:pt-36 md:pb-32">
+        <div className="grid lg:grid-cols-[1fr_420px] gap-16 lg:gap-12 items-center">
 
-          {/* Right Side - Interactive Element/Graphic */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative lg:h-[500px] flex items-center justify-center"
-          >
-            {/* Main floating card */}
-            <motion.div 
-              animate={{ y: [-10, 10, -10] }}
-              transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-              className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl shadow-primary/10 border border-gray-100 p-6 z-20 glass"
-            >
-              <div className="flex items-center justify-between mb-8 border-b pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">Conversion Rate</p>
-                    <p className="text-xs text-gray-500">Last 30 days</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-primary">+24%</p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                      <Users className="w-4 h-4 text-gray-500" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${85 - (i * 15)}%` }}
-                          transition={{ duration: 1, delay: 0.5 + (i * 0.2) }}
-                          className="h-full bg-primary rounded-full"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-sm font-medium w-8">{85 - (i * 15)}%</p>
-                  </div>
-                ))}
-              </div>
+          {/* ── LEFT: TEXT ── */}
+          <div className="max-w-2xl">
+            {/* Eyebrow */}
+            <motion.div {...fadeUp(0.1)} className="mb-6">
+              <span className="label-text">
+                Technical Partner · Kerala, India
+              </span>
             </motion.div>
 
-            {/* Decorative background elements */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-md rounded-full border border-primary/20 scale-110" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-md rounded-full border border-primary/10 scale-125" />
+            {/* H1 */}
+            <motion.h1
+              {...fadeUp(0.2)}
+              className="font-display text-[2.75rem] sm:text-5xl md:text-6xl lg:text-[4rem] font-bold leading-[1.08] tracking-tight text-foreground mb-6"
+            >
+              Your product is{" "}
+              <span className="text-gradient">world-class.</span>
+              <br />
+              Your website{" "}
+              <span className="relative inline-block">
+                makes it look cheap.
+              </span>
+            </motion.h1>
+
+            {/* Sub */}
+            <motion.p
+              {...fadeUp(0.3)}
+              className="text-lg text-muted leading-relaxed max-w-xl mb-10"
+            >
+              I engineer high-converting digital infrastructures for founders
+              and B2B teams - the kind that position you as the premium choice
+              before a single word is read.
+            </motion.p>
+
+            {/* CTAs - ONE primary, one ghost */}
+            <motion.div
+              {...fadeUp(0.4)}
+              className="flex flex-col sm:flex-row gap-3 mb-12"
+            >
+              <button
+                onClick={scrollToContact}
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-accent text-white text-sm font-semibold rounded-full shadow-lg shadow-accent/25 hover:bg-accent/90 active:scale-[0.98] transition-all duration-150"
+              >
+                Apply for a Build
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                  <path d="M1 7h12M8 2.5L12.5 7 8 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+
+              <button
+                onClick={scrollToWork}
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-sm font-medium text-muted border border-white/10 rounded-full hover:border-white/20 hover:text-foreground active:scale-[0.98] transition-all duration-150"
+              >
+                See case studies
+              </button>
+            </motion.div>
+
+            {/* Social proof stats */}
+            <motion.div
+              {...fadeUp(0.5)}
+              className="flex flex-wrap gap-8"
+            >
+              {STATS.map((stat) => (
+                <div key={stat.label}>
+                  <p className="font-display text-2xl font-bold text-foreground tracking-tight">
+                    {stat.value}
+                  </p>
+                  <p className="text-xs text-muted mt-0.5">{stat.label}</p>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+
+          {/* ── RIGHT: PORTRAIT CARD ── */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="relative hidden lg:block"
+          >
+            {/* Outer glow ring */}
+            <div
+              aria-hidden="true"
+              className="absolute -inset-6 rounded-3xl bg-accent/8 blur-2xl"
+            />
+
+            <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] bg-elevated aspect-[4/5]">
+              <Image
+                src="/me.webp"
+                alt={`Portrait of ${siteConfig.name}`}
+                fill
+                sizes="(max-width: 1024px) 0px, 420px"
+                className="object-cover object-top"
+                priority
+              />
+              {/* Subtle overlay gradient at the bottom */}
+              <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-[#09090b]/80 to-transparent" />
+
+              {/* Floating name tag */}
+              <div className="absolute bottom-5 inset-x-5 flex items-end justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-white">{siteConfig.name}</p>
+                  <p className="text-xs text-white/60 mt-0.5">Technical Partner</p>
+                </div>
+                {/* Available badge */}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/50 backdrop-blur-sm border border-white/10 rounded-full text-xs text-white/80">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                  </span>
+                  Available
+                </span>
+              </div>
+            </div>
           </motion.div>
-          
+
         </div>
       </div>
+
+      {/* Scroll cue */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2, duration: 0.6 }}
+        aria-hidden="true"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+      >
+        <span className="text-[10px] tracking-widest uppercase text-muted">Scroll</span>
+        <motion.div
+          animate={{ y: [0, 6, 0] }}
+          transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+          className="w-px h-8 bg-gradient-to-b from-white/20 to-transparent"
+        />
+      </motion.div>
     </section>
   );
 }

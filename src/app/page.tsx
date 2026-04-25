@@ -1,23 +1,21 @@
-import { Hero } from '../components/sections/Hero';
-import { Services } from '../components/sections/Services';
-import { About } from '../components/sections/About';
-import { Process } from '../components/sections/Process';
-import { Projects } from '../components/sections/Projects';
-import { Calculator } from '../components/sections/Calculator';
-import { Contact } from '../components/sections/Contact';
-import { CTA } from '../components/sections/CTA';
+import { Hero }        from "../components/sections/Hero";
+import { Problem }     from "../components/sections/Problem";
+import { CaseStudies } from "../components/sections/Projects";
+import { Process }     from "../components/sections/Process";
+import { Offers }      from "../components/sections/Offers";
+import { CTA }         from "../components/sections/CTA";
+import { Contact }     from "../components/sections/Contact";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between">
+    <>
       <Hero />
-      <Services />
-      <About />
+      <Problem />
+      <CaseStudies />
       <Process />
-      <Projects />
-      <Calculator />
+      <Offers />
       <CTA />
       <Contact />
-    </main>
+    </>
   );
 }
